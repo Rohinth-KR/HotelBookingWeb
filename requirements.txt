@@ -8,7 +8,7 @@ bcrypt>=4.1,<5.0
 # Environment variables
 python-decouple>=3.8,<4.0
 
-# CORS headers (for frontend integration)
+# CORS headers (for frontend integration - kept for potential external APIs)
 django-cors-headers>=4.3,<5.0
 
 # Razorpay payment gateway
@@ -19,3 +19,6 @@ django-unfold>=0.90,<1.0
 
 # Image processing (required for ImageField)
 Pillow>=12.0,<13.0
+
+# Packaging (Required for razorpay/pkg_resources interactions in newer Python versions)
+setuptools<70.0

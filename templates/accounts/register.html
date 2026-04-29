@@ -1,27 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Sign Up - GrandStay</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script src="js/auth.js"></script>
-</head>
-<body>
-    <nav>
-        <a href="index.html" class="logo-text">GrandStay</a>
-        <div class="nav-links" id="nav-links-container">
-            <!-- Dynamically populated by auth.js -->
-        </div>
-    </nav>
+{% extends "base.html" %}
+{% block title %}Sign Up - GrandStay{% endblock %}
 
+{% block content %}
     <div class="container" style="max-width: 450px;">
         <!-- Registration Form -->
         <div class="card" id="registerCard">
             <h2 style="margin-bottom: 0.5rem; color: var(--primary);">Create an Account</h2>
             <p style="color: var(--text-light); margin-bottom: 1.5rem;">Join GrandStay for exclusive deals.</p>
-            
+
             <div id="regErrorBox" class="alert hidden"></div>
-            
+
             <form id="registerForm" onsubmit="handleRegister(event)">
                 <div class="form-group">
                     <label>Full Name</label>
@@ -42,7 +30,7 @@
                 <button type="submit" class="btn" id="regBtn">Sign Up</button>
             </form>
             <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem;">
-                Already have an account? <a href="login.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Login here</a>
+                Already have an account? <a href="{% url 'accounts:login-page' %}" style="color: var(--primary); text-decoration: none; font-weight: 600;">Login here</a>
             </p>
         </div>
 
@@ -51,9 +39,9 @@
             <div style="font-size: 3rem; margin-bottom: 1rem;">✉️</div>
             <h2 style="margin-bottom: 0.5rem; color: var(--primary);">Verify Your Email</h2>
             <p style="color: var(--text-light); margin-bottom: 1.5rem;">We've sent a 6-digit code to <strong id="sentEmailText"></strong>.</p>
-            
+
             <div id="otpErrorBox" class="alert hidden"></div>
-            
+
             <form id="otpForm" onsubmit="handleVerifyOTP(event)">
                 <div class="form-group">
                     <input type="text" id="otp_code" required placeholder="Enter 6-digit code" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px;" maxlength="6">
@@ -65,25 +53,25 @@
             </p>
         </div>
     </div>
+{% endblock %}
 
+{% block extra_js %}
     <script>
         let registeredEmail = "";
 
         async function handleResendOTP() {
             const resendBtn = document.getElementById('resendBtn');
             const errorBox = document.getElementById('otpErrorBox');
-            
             resendBtn.disabled = true;
             resendBtn.textContent = 'Sending...';
             errorBox.classList.add('hidden');
 
             try {
-                const res = await fetch('http://127.0.0.1:8000/accounts/resend-otp/', {
+                const res = await fetch("{% url 'accounts:resend-otp' %}", {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                     body: JSON.stringify({ email: registeredEmail })
                 });
-                
                 if (res.ok) {
                     errorBox.textContent = 'A new code has been sent to your email!';
                     errorBox.classList.remove('hidden');
@@ -100,11 +88,7 @@
                 errorBox.textContent = 'Network error resending OTP.';
                 errorBox.classList.remove('hidden');
             } finally {
-                // Keep disabled for 30 seconds to prevent spam
-                setTimeout(() => {
-                    resendBtn.disabled = false;
-                    resendBtn.textContent = 'Resend OTP';
-                }, 30000);
+                setTimeout(() => { resendBtn.disabled = false; resendBtn.textContent = 'Resend OTP'; }, 30000);
             }
         }
 
@@ -112,7 +96,6 @@
             e.preventDefault();
             const regBtn = document.getElementById('regBtn');
             const errorBox = document.getElementById('regErrorBox');
-            
             regBtn.disabled = true;
             regBtn.textContent = 'Sending code...';
             errorBox.classList.add('hidden');
@@ -122,36 +105,26 @@
                 email: document.getElementById('email').value,
                 password: document.getElementById('password').value
             };
-            
             const phone = document.getElementById('phone_number').value;
             if (phone) payload.phone = phone;
 
             try {
-                const res = await fetch('http://127.0.0.1:8000/accounts/register/', {
+                const res = await fetch("{% url 'accounts:register' %}", {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                     body: JSON.stringify(payload)
                 });
-                
                 const data = await res.json();
-                
                 if (res.ok) {
                     registeredEmail = data.email;
                     document.getElementById('sentEmailText').textContent = registeredEmail;
-                    
-                    // Switch to OTP view
                     document.getElementById('registerCard').classList.add('hidden');
                     document.getElementById('otpCard').classList.remove('hidden');
                 } else {
-                    // Format errors nicely
                     let errMsg = "Registration failed. ";
                     if (data.errors) {
-                        for (const [key, msgs] of Object.entries(data.errors)) {
-                            errMsg += `\n${key}: ${msgs[0]}`;
-                        }
-                    } else {
-                        errMsg = data.detail || 'Something went wrong.';
-                    }
+                        for (const [key, msgs] of Object.entries(data.errors)) { errMsg += `\n${key}: ${msgs[0]}`; }
+                    } else { errMsg = data.detail || 'Something went wrong.'; }
                     errorBox.innerText = errMsg;
                     errorBox.classList.remove('hidden');
                 }
@@ -168,26 +141,20 @@
             e.preventDefault();
             const otpBtn = document.getElementById('otpBtn');
             const errorBox = document.getElementById('otpErrorBox');
-            
             otpBtn.disabled = true;
             otpBtn.textContent = 'Verifying...';
             errorBox.classList.add('hidden');
 
-            const otpCode = document.getElementById('otp_code').value;
-
             try {
-                const res = await fetch('http://127.0.0.1:8000/accounts/verify-otp/', {
+                const res = await fetch("{% url 'accounts:verify-otp' %}", {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: registeredEmail, otp: otpCode }),
-                    credentials: 'include' // Important! This tells the browser to accept the new session cookie sent by the backend upon successful OTP verification.
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: JSON.stringify({ email: registeredEmail, otp: document.getElementById('otp_code').value }),
+                    credentials: 'include'
                 });
-                
                 const data = await res.json();
-                
                 if (res.ok) {
-                    // Success! Backend already logged us in via session cookie.
-                    window.location.href = 'index.html';
+                    window.location.href = "{% url 'home' %}";
                 } else {
                     errorBox.textContent = data.error || 'Verification failed.';
                     errorBox.classList.remove('hidden');
@@ -201,5 +168,4 @@
             }
         }
     </script>
-</body>
-</html>
+{% endblock %}

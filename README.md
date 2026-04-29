@@ -38,13 +38,13 @@
 
 ## 🌐 Overview
 
-**GrandStay** is a production-grade hotel booking platform built with a **decoupled architecture** — a Django REST API backend serves data to a vanilla HTML/CSS/JS frontend. The system supports end-to-end flows: from user registration with OTP email verification, to searching rooms with filters, to secure payment processing via Razorpay, to booking management with real-time cancellation.
+**GrandStay** is a production-grade hotel booking platform built as a **monolithic Django application**. It utilizes Django's server-side rendering for its frontend and integrates a robust API backend for dynamic interactions. The system supports end-to-end flows: from user registration with OTP email verification, to searching rooms with filters, to secure payment processing via Razorpay, to booking management with real-time cancellation.
 
 ### Key Highlights
 
 | Aspect | Details |
 |--------|---------|
-| **Architecture** | Decoupled — REST API (Port 8000) + Static Frontend (Port 8080) |
+| **Architecture** | Monolithic — Django Templates (SSR) + API Endpoints |
 | **Auth** | Email + OTP verification, session-based, rate-limited login |
 | **Payments** | Razorpay SDK with HMAC-SHA256 signature verification |
 | **Admin** | Django Unfold UI with inline image uploads, live stats dashboard |
@@ -55,45 +55,39 @@
 ## 🏗 Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND (Port 8080)                     │
-│   HTML/CSS/JS served via Python HTTP Server                     │
-│                                                                 │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │
-│  │ index    │ │ search   │ │ room-    │ │ checkout /       │   │
-│  │ .html    │ │ .html    │ │ details  │ │ confirmation     │   │
-│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────────┬─────────┘   │
-│       │             │            │                │             │
-│       └─────────────┴────────────┴────────────────┘             │
-│                          │ fetch() with credentials             │
-└──────────────────────────┼──────────────────────────────────────┘
-                           │ CORS + Session Cookie
-                           ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                    DJANGO REST API (Port 8000)                   │
+│                    DJANGO MONOLITH (Port 8000)                   │
 │                                                                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
-│  │  accounts/   │  │   rooms/     │  │    payments/         │   │
-│  │              │  │              │  │                      │   │
-│  │ • Register   │  │ • Search     │  │ • Create Order       │   │
-│  │ • OTP Verify │  │ • Detail     │  │ • Verify Signature   │   │
-│  │ • Login      │  │ • Hold Room  │  │ • Webhook Handler    │   │
-│  │ • Logout     │  │ • Cancel     │  │                      │   │
-│  │ • Me (auth)  │  │ • My Bookings│  │                      │   │
-│  └──────┬───────┘  └──────┬───────┘  └──────────┬───────────┘   │
-│         │                 │                     │               │
-│         └─────────────────┴─────────────────────┘               │
-│                           │                                     │
-│              ┌────────────┴────────────┐                        │
-│              │      SQLite / DB        │                        │
-│              └─────────────────────────┘                        │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │                     TEMPLATE ENGINE                        │  │
+│  │  ┌────────┐ ┌────────┐ ┌────────┐ ┌──────────────────┐   │  │
+│  │  │ index  │ │ search │ │ room-  │ │ checkout /       │   │  │
+│  │  │ .html  │ │ .html  │ │ details│ │ confirmation     │   │  │
+│  │  └────────┘ └────────┘ └────────┘ └──────────────────┘   │  │
+│  └───────────────────────────┬────────────────────────────────┘  │
+│                              │ Context & Internal APIs           │
+│                              ▼                                   │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │                    API / CONTROLLERS                       │  │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐   │  │
+│  │  │  accounts/   │  │   rooms/     │  │    payments/    │   │  │
+│  │  │ • Register   │  │ • Search     │  │ • Create Order  │   │  │
+│  │  │ • Verify OTP │  │ • Detail     │  │ • Verify Pay    │   │  │
+│  │  │ • Login      │  │ • Hold Room  │  │ • Webhook       │   │  │
+│  │  │ • Logout     │  │ • Cancel     │  │                 │   │  │
+│  │  └──────────────┘  └──────────────┘  └─────────────────┘   │  │
+│  └───────────────────────────┬────────────────────────────────┘  │
+│                              │                                   │
+│              ┌───────────────┴───────────────┐                   │
+│              │          SQLite / DB          │                   │
+│              └───────────────────────────────┘                   │
 │                                                                  │
 │  External Services:                                              │
-│  ┌───────────────┐  ┌──────────────────┐                        │
-│  │ Gmail SMTP    │  │ Razorpay API     │                        │
-│  │ (OTP emails,  │  │ (orders, verify, │                        │
-│  │  confirmations│  │  webhooks)       │                        │
-│  └───────────────┘  └──────────────────┘                        │
+│  ┌───────────────┐  ┌──────────────────┐                         │
+│  │ Gmail SMTP    │  │ Razorpay API     │                         │
+│  │ (OTP emails,  │  │ (orders, verify, │                         │
+│  │  confirmations│  │  webhooks)       │                         │
+│  └───────────────┘  └──────────────────┘                         │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -145,22 +139,20 @@ Hotel_booking_P1/
 │   ├── admin.py                 #   Payment admin panel
 │   └── urls.py                  #   /payments/* routes
 │
-├── templates/                   # 📧 Server-side templates
-│   ├── admin/
+├── templates/                   # 🎨 Django HTML Templates
+│   ├── base.html                #   Master layout and navigation
+│   ├── index.html               #   Landing page with search form
+│   ├── accounts/                #   Auth pages (login, register)
+│   ├── rooms/                   #   Room search and details pages
+│   ├── bookings/                #   My bookings and confirmation pages
+│   ├── payments/                #   Checkout page
+│   ├── admin/                   #   Admin customizations
 │   │   └── base_site.html       #   Custom Unfold admin dashboard
-│   └── emails/
+│   └── emails/                  #   Email templates
 │       ├── otp_email.html       #   OTP verification email (styled HTML)
 │       └── booking_confirmation.html  # Post-payment confirmation email
 │
-├── frontend/                    # 🎨 Client-side UI
-│   ├── index.html               #   Landing page with search form
-│   ├── register.html            #   Sign up + OTP verification flow
-│   ├── login.html               #   Login page
-│   ├── search.html              #   Room search results with filters
-│   ├── room-details.html        #   Full room details + gallery + booking sidebar
-│   ├── checkout.html            #   Razorpay payment modal
-│   ├── confirmation.html        #   Post-payment booking confirmation
-│   ├── my-bookings.html         #   Booking dashboard with cancellation
+├── static/                      # 🖼️ Static Assets
 │   ├── css/
 │   │   └── style.css            #   Global design system & component styles
 │   ├── js/
@@ -452,26 +444,16 @@ python manage.py seed_rooms
 
 This creates 15 rooms across 5 Indian cities (Mumbai, Delhi, Bangalore, Goa, Jaipur) with varied types and pricing.
 
-### 8. Start the Servers
+### 8. Start the Server
 
-Open **two terminal windows**:
-
-**Terminal 1 — Django API Server:**
 ```bash
 python manage.py runserver
 # Running at http://127.0.0.1:8000
 ```
 
-**Terminal 2 — Frontend Static Server:**
-```bash
-cd frontend
-python -m http.server 8080
-# Running at http://127.0.0.1:8080
-```
-
 ### 9. Open the App
 
-Navigate to **http://127.0.0.1:8080** in your browser.
+Navigate to **http://127.0.0.1:8000/** in your browser to view the site.
 
 Admin Panel: **http://127.0.0.1:8000/admin/**
 

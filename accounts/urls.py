@@ -2,13 +2,29 @@
 URL configuration for the accounts app.
 """
 
+from django.shortcuts import render
 from django.urls import path
 
 from . import views
 
 app_name = "accounts"
 
+
+# Page views
+def login_page(request):
+    return render(request, "accounts/login.html")
+
+
+def register_page(request):
+    return render(request, "accounts/register.html")
+
+
 urlpatterns = [
+    # Pages
+    path("login/page/", login_page, name="login-page"),
+    path("register/page/", register_page, name="register-page"),
+
+    # API endpoints
     path("register/", views.RegisterView.as_view(), name="register"),
     path("verify-otp/", views.VerifyOTPView.as_view(), name="verify-otp"),
     path("resend-otp/", views.ResendOTPView.as_view(), name="resend-otp"),

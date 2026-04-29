@@ -1,35 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Search Results - Hotel Booking</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script src="js/auth.js"></script>
-    <style>
-        .search-layout { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; margin-top: 2rem; }
-        .sidebar { background: var(--surface); padding: 1.5rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); height: fit-content; position: sticky; top: 2rem; }
-        .room-card { display: flex; gap: 1.5rem; }
-        .room-info { flex: 1; }
-        .room-price { text-align: right; min-width: 150px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;}
-        .price-text { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
-        .results-grid { display: grid; gap: 1.5rem; }
-        
-        @media (max-width: 768px) {
-            .search-layout { grid-template-columns: 1fr; }
-            .room-card { flex-direction: column; }
-            .room-price { text-align: left; align-items: flex-start; }
-            .sidebar { position: static; }
-        }
-    </style>
-</head>
-<body>
-    <nav>
-        <a href="index.html" class="logo-text">GrandStay</a>
-        <div class="nav-links" id="nav-links-container">
-            <!-- Dynamically populated by auth.js -->
-        </div>
-    </nav>
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Search Results - GrandStay{% endblock %}
 
+{% block extra_css %}
+<style>
+    .search-layout { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; margin-top: 2rem; }
+    .sidebar { background: var(--surface); padding: 1.5rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); height: fit-content; position: sticky; top: 2rem; }
+    .room-card { display: flex; gap: 1.5rem; }
+    .room-info { flex: 1; }
+    .room-price { text-align: right; min-width: 150px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;}
+    .price-text { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+    .results-grid { display: grid; gap: 1.5rem; }
+
+    @media (max-width: 768px) {
+        .search-layout { grid-template-columns: 1fr; }
+        .room-card { flex-direction: column; }
+        .room-price { text-align: left; align-items: flex-start; }
+        .sidebar { position: static; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
     <div class="container search-layout">
         <aside class="sidebar">
             <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem;">Filter Results</h3>
@@ -69,9 +61,16 @@
             <div id="results" class="results-grid"></div>
         </main>
     </div>
+{% endblock %}
 
+{% block extra_js %}
     <script>
-        // Parse URL params
+        const ROOM_DETAIL_URL = "{% url 'rooms:room-detail-page' %}";
+        const SEARCH_API_URL = "{% url 'rooms:search' %}";
+        const HOLD_API_URL = "{% url 'bookings:hold' %}";
+        const LOGIN_PAGE_URL = "{% url 'accounts:login-page' %}";
+        const CHECKOUT_URL = "{% url 'payments:checkout-page' %}";
+
         const params = new URLSearchParams(window.location.search);
         let searchParams = {
             city: params.get('city'),
@@ -80,12 +79,9 @@
             guests: params.get('guests')
         };
 
-        // Handle Filter Submission
         document.getElementById('filterForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            
-            // Only add filters if they are not empty
             const min_price = formData.get('min_price');
             const max_price = formData.get('max_price');
             const room_type = formData.get('room_type');
@@ -95,9 +91,13 @@
             if (max_price) searchParams.max_price = max_price; else delete searchParams.max_price;
             if (room_type) searchParams.room_type = room_type; else delete searchParams.room_type;
             if (sort) searchParams.sort = sort; else delete searchParams.sort;
-
             loadRooms();
         });
+
+        function roomDetailUrl(roomId) {
+            return ROOM_DETAIL_URL + 
+                   `?id=${roomId}&check_in=${searchParams.check_in}&check_out=${searchParams.check_out}&guests=${searchParams.guests}`;
+        }
 
         async function loadRooms() {
             try {
@@ -106,7 +106,7 @@
                 document.getElementById('errorBox').classList.add('hidden');
 
                 const query = new URLSearchParams(searchParams).toString();
-                const res = await fetch(`http://127.0.0.1:8000/rooms/search/?${query}`);
+                const res = await fetch(`${SEARCH_API_URL}?${query}`);
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -117,7 +117,6 @@
                 }
 
                 document.getElementById('searchTitle').textContent = data.message;
-                
                 resultsDiv.innerHTML = '';
                 if (data.rooms.length === 0) {
                     resultsDiv.innerHTML = '<div class="card"><p style="text-align: center; padding: 2rem;">No rooms match your criteria. Try adjusting your filters.</p></div>';
@@ -125,13 +124,11 @@
                 }
 
                 data.rooms.forEach(room => {
+                    const detailUrl = roomDetailUrl(room.id);
                     const card = document.createElement('div');
                     card.className = 'card room-card';
                     card.style.cursor = 'pointer';
-                    card.onclick = (e) => {
-                        if (e.target.tagName === 'BUTTON') return; // Let button handle its own click
-                        window.location.href = `room-details.html?id=${room.id}&check_in=${searchParams.check_in}&check_out=${searchParams.check_out}&guests=${searchParams.guests}`;
-                    };
+                    card.onclick = (e) => { if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return; window.location.href = detailUrl; };
                     card.innerHTML = `
                         <div class="room-info">
                             <h3 style="margin-bottom: 0.5rem; font-size: 1.3rem;">${room.name}</h3>
@@ -146,12 +143,11 @@
                             <div style="font-size: 0.85rem; color: #666; margin-bottom: 0.2rem;">From</div>
                             <div class="price-text">Rs. ${room.price_per_night}</div>
                             <div style="font-size: 0.85rem; color: #666; margin-bottom: 1rem;">per night</div>
-                            <a href="room-details.html?id=${room.id}&check_in=${searchParams.check_in}&check_out=${searchParams.check_out}&guests=${searchParams.guests}" class="btn" style="width: 100%; text-align: center; font-size: 0.9rem;">View Details</a>
+                            <a href="${detailUrl}" class="btn" style="width: 100%; text-align: center; font-size: 0.9rem;">View Details</a>
                         </div>
                     `;
                     resultsDiv.appendChild(card);
                 });
-
             } catch (err) {
                 document.getElementById('errorBox').textContent = 'Network error fetching rooms.';
                 document.getElementById('errorBox').classList.remove('hidden');
@@ -159,38 +155,6 @@
             }
         }
 
-        async function bookRoom(roomId) {
-            try {
-                const res = await fetch('http://127.0.0.1:8000/bookings/hold/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        room_id: roomId,
-                        check_in: searchParams.check_in,
-                        check_out: searchParams.check_out,
-                        guests: parseInt(searchParams.guests)
-                    })
-                });
-
-                if (res.status === 401 || res.status === 403) {
-                    alert('Please login to book a room.');
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                const data = await res.json();
-                if (res.ok) {
-                    window.location.href = `checkout.html?booking_id=${data.booking.id}`;
-                } else {
-                    alert(data.error || 'Failed to hold room');
-                }
-            } catch (err) {
-                alert('Network error during booking hold.');
-            }
-        }
-
         loadRooms();
     </script>
-</body>
-</html>
+{% endblock %}
