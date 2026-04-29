@@ -2,46 +2,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}GrandStay{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    {% block extra_css %}{% endblock %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Temples & Towns{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <a href="{% url 'home' %}" class="logo-text">GrandStay</a>
-        <div class="nav-links" id="nav-links-container">
-            {% if user.is_authenticated %}
-                <div class="user-badge">
-                    <span class="user-avatar">👤</span>
-                    <span class="user-name">{{ user.full_name }}</span>
-                </div>
-                <a href="{% url 'bookings:my-bookings-page' %}" class="nav-btn">My Bookings</a>
-                <button onclick="logout()" class="nav-btn btn-danger-outline">Logout</button>
-            {% else %}
-                <a href="{% url 'accounts:login-page' %}" class="nav-btn btn-primary-outline">Login</a>
-                <a href="{% url 'accounts:register-page' %}" class="nav-btn btn-primary">Sign Up</a>
-            {% endif %}
-        </div>
-    </nav>
 
-    {% block content %}{% endblock %}
+<nav>
+  <a href="{% url 'home' %}" class="logo-text">
+    <div class="logo-mark"></div>
+    Temples &amp; Towns
+  </a>
 
-    <script>
-        async function logout() {
-            try {
-                await fetch("{% url 'accounts:logout' %}", {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-                });
-                window.location.href = "{% url 'home' %}";
-            } catch (err) {
-                console.error("Logout failed:", err);
-            }
-        }
-    </script>
-    {% block extra_js %}{% endblock %}
+  <div class="nav-links">
+    <a href="{% url 'home' %}" class="nav-link">Stay</a>
+    <a href="{% url 'rooms:search-page' %}" class="nav-link">Discover</a>
+    {% if user.is_authenticated %}
+      <a href="{% url 'bookings:my-bookings-page' %}" class="nav-link">My Trips</a>
+    {% endif %}
+  </div>
+
+  <div class="nav-right">
+    {% if user.is_authenticated %}
+      <div class="user-badge">
+        <span class="user-avatar">👤</span>
+        <span class="user-name">{{ user.full_name }}</span>
+      </div>
+      <button onclick="logout()" class="nav-btn btn-danger-outline">Sign out</button>
+    {% else %}
+      <a href="{% url 'accounts:login-page' %}" class="nav-btn btn-primary-outline">Sign In</a>
+      <a href="{% url 'accounts:register-page' %}" class="nav-btn btn-primary">Get started</a>
+    {% endif %}
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="{% url 'home' %}" class="logo-text" style="margin-bottom: 14px; display: inline-flex;">
+        <div class="logo-mark"></div>
+        Temples &amp; Towns
+      </a>
+      <p style="color: var(--text-soft); font-size: 14px; max-width: 300px; line-height: 1.6; margin-top: 12px;">
+        A curated collection of stays across Pondicherry and Bengaluru. Booked carefully, hosted personally.
+      </p>
+    </div>
+    <div>
+      <h4>Stay</h4>
+      <ul>
+        <li><a href="#">Pondicherry</a></li>
+        <li><a href="#">Bengaluru</a></li>
+        <li><a href="#">Long stays</a></li>
+        <li><a href="#">Group bookings</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#">Our story</a></li>
+        <li><a href="#">Hospitality</a></li>
+        <li><a href="#">Press</a></li>
+        <li><a href="#">Careers</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Help</h4>
+      <ul>
+        <li><a href="#">Cancellation</a></li>
+        <li><a href="#">Contact host</a></li>
+        <li><a href="#">Privacy</a></li>
+        <li><a href="#">Terms</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Temples &amp; Towns Hospitality. Bengaluru &amp; Pondicherry, India.</span>
+    <span>INR · English</span>
+  </div>
+</footer>
+
+<script>
+  async function logout() {
+    try {
+      await fetch("{% url 'accounts:logout' %}", {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+      });
+      window.location.href = "{% url 'home' %}";
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  }
+</script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

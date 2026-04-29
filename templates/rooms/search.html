@@ -1,160 +1,275 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Search Results - GrandStay{% endblock %}
+{% block title %}Find a Stay — Temples & Towns{% endblock %}
 
 {% block extra_css %}
 <style>
-    .search-layout { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; margin-top: 2rem; }
-    .sidebar { background: var(--surface); padding: 1.5rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); height: fit-content; position: sticky; top: 2rem; }
-    .room-card { display: flex; gap: 1.5rem; }
-    .room-info { flex: 1; }
-    .room-price { text-align: right; min-width: 150px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;}
-    .price-text { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
-    .results-grid { display: grid; gap: 1.5rem; }
-
-    @media (max-width: 768px) {
-        .search-layout { grid-template-columns: 1fr; }
-        .room-card { flex-direction: column; }
-        .room-price { text-align: left; align-items: flex-start; }
-        .sidebar { position: static; }
-    }
+  .room-card-h .card-image-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    background: linear-gradient(135deg, oklch(0.9 0.04 230), oklch(0.82 0.07 235));
+    display: flex;
+    align-items: flex-end;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .room-card-h .card-image-placeholder::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(135deg, transparent 0 18px, rgba(255,255,255,0.12) 18px 36px);
+  }
+  .room-card-h .card-image-placeholder::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.2));
+  }
+  .img-tag {
+    position: relative;
+    z-index: 2;
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.9);
+    background: rgba(0,0,0,0.3);
+    padding: 3px 9px;
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-    <div class="container search-layout">
-        <aside class="sidebar">
-            <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem;">Filter Results</h3>
-            <form id="filterForm">
-                <div class="form-group">
-                    <label>Min Price (Rs.)</label>
-                    <input type="number" id="min_price" name="min_price" placeholder="e.g. 1000">
-                </div>
-                <div class="form-group">
-                    <label>Max Price (Rs.)</label>
-                    <input type="number" id="max_price" name="max_price" placeholder="e.g. 10000">
-                </div>
-                <div class="form-group">
-                    <label>Room Type</label>
-                    <select id="room_type" name="room_type">
-                        <option value="">All Types</option>
-                        <option value="standard">Standard</option>
-                        <option value="deluxe">Deluxe</option>
-                        <option value="suite">Suite</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Sort By</label>
-                    <select id="sort" name="sort">
-                        <option value="">Recommended</option>
-                        <option value="price_asc">Price: Low to High</option>
-                        <option value="price_desc">Price: High to Low</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Apply Filters</button>
-            </form>
-        </aside>
+<div style="max-width: 1280px; margin: 0 auto; padding: 28px 32px 80px;">
 
-        <main>
-            <h2 id="searchTitle" style="margin-bottom: 1.5rem;">Loading results...</h2>
-            <div id="errorBox" class="alert hidden"></div>
-            <div id="results" class="results-grid"></div>
-        </main>
+  <!-- Search summary bar -->
+  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--pill); box-shadow: var(--shadow-md); display: grid; grid-template-columns: 1.4fr 1fr 1fr 0.9fr auto; gap: 4px; align-items: stretch; padding: 8px; margin-bottom: 32px;">
+    <div class="search-cell">
+      <span class="lbl">📍 City</span>
+      <select id="citySelect" style="border:none; padding:0; background:transparent; font-size:15px; font-weight:500; cursor:pointer; outline:none; -webkit-appearance:none; appearance:none;">
+        <option value="Pondicherry">Pondicherry</option>
+        <option value="Bengaluru">Bengaluru</option>
+      </select>
     </div>
+    <div class="search-cell">
+      <span class="lbl">📅 Check in</span>
+      <input type="date" id="checkinDisplay" style="border:none; padding:0; background:transparent; font-size:15px; font-weight:500; outline:none; box-shadow:none;" />
+    </div>
+    <div class="search-cell">
+      <span class="lbl">📅 Check out</span>
+      <input type="date" id="checkoutDisplay" style="border:none; padding:0; background:transparent; font-size:15px; font-weight:500; outline:none; box-shadow:none;" />
+    </div>
+    <div class="search-cell">
+      <span class="lbl">👥 Guests</span>
+      <input type="number" id="guestsDisplay" min="1" max="10" style="border:none; padding:0; background:transparent; font-size:15px; font-weight:500; outline:none; box-shadow:none;" />
+    </div>
+    <button onclick="updateSearch()" class="search-go" style="border-radius: 14px; padding: 0 24px;">
+      🔍 Update
+    </button>
+  </div>
+
+  <div class="search-layout">
+    <!-- Sidebar Filters -->
+    <aside class="sidebar">
+      <h3>Filter Results</h3>
+      <form id="filterForm">
+        <div class="form-group">
+          <label>Min Price (₹)</label>
+          <input type="number" id="min_price" name="min_price" placeholder="e.g. 1000">
+        </div>
+        <div class="form-group">
+          <label>Max Price (₹)</label>
+          <input type="number" id="max_price" name="max_price" placeholder="e.g. 10000">
+        </div>
+        <div class="filter-divider"></div>
+        <div class="form-group">
+          <label>Room Type</label>
+          <select id="room_type" name="room_type">
+            <option value="">All Types</option>
+            <option value="standard">Standard</option>
+            <option value="deluxe">Deluxe</option>
+            <option value="suite">Suite</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sort By</label>
+          <select id="sort" name="sort">
+            <option value="">Recommended</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+          </select>
+        </div>
+        <button type="submit" class="btn" style="border-radius: 12px; font-size: 14px; padding: 11px 20px;">
+          Apply filters
+        </button>
+      </form>
+    </aside>
+
+    <!-- Results -->
+    <main>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 id="searchTitle" style="font-size: clamp(22px, 3vw, 32px); font-weight: 700; letter-spacing: -0.02em;">Loading results…</h2>
+          <p id="searchSubtitle" style="font-size: 14px; color: var(--text-muted); margin-top: 4px;"></p>
+        </div>
+      </div>
+
+      <div id="errorBox" class="alert hidden"></div>
+      <div id="results" class="results-grid"></div>
+    </main>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
-    <script>
-        const ROOM_DETAIL_URL = "{% url 'rooms:room-detail-page' %}";
-        const SEARCH_API_URL = "{% url 'rooms:search' %}";
-        const HOLD_API_URL = "{% url 'bookings:hold' %}";
-        const LOGIN_PAGE_URL = "{% url 'accounts:login-page' %}";
-        const CHECKOUT_URL = "{% url 'payments:checkout-page' %}";
+<script>
+  const ROOM_DETAIL_URL = "{% url 'rooms:room-detail-page' %}";
+  const SEARCH_API_URL = "{% url 'rooms:search' %}";
+  const HOLD_API_URL = "{% url 'bookings:hold' %}";
+  const LOGIN_PAGE_URL = "{% url 'accounts:login-page' %}";
+  const CHECKOUT_URL = "{% url 'payments:checkout-page' %}";
 
-        const params = new URLSearchParams(window.location.search);
-        let searchParams = {
-            city: params.get('city'),
-            check_in: params.get('check_in'),
-            check_out: params.get('check_out'),
-            guests: params.get('guests')
-        };
+  const params = new URLSearchParams(window.location.search);
+  let searchParams = {
+    city: params.get('city') || 'Pondicherry',
+    check_in: params.get('check_in'),
+    check_out: params.get('check_out'),
+    guests: params.get('guests') || '2'
+  };
 
-        document.getElementById('filterForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const min_price = formData.get('min_price');
-            const max_price = formData.get('max_price');
-            const room_type = formData.get('room_type');
-            const sort = formData.get('sort');
+  // Pre-fill bar
+  document.getElementById('citySelect').value = searchParams.city;
+  if (searchParams.check_in) document.getElementById('checkinDisplay').value = searchParams.check_in;
+  if (searchParams.check_out) document.getElementById('checkoutDisplay').value = searchParams.check_out;
+  document.getElementById('guestsDisplay').value = searchParams.guests;
 
-            if (min_price) searchParams.min_price = min_price; else delete searchParams.min_price;
-            if (max_price) searchParams.max_price = max_price; else delete searchParams.max_price;
-            if (room_type) searchParams.room_type = room_type; else delete searchParams.room_type;
-            if (sort) searchParams.sort = sort; else delete searchParams.sort;
-            loadRooms();
-        });
+  function updateSearch() {
+    searchParams.city = document.getElementById('citySelect').value;
+    searchParams.check_in = document.getElementById('checkinDisplay').value;
+    searchParams.check_out = document.getElementById('checkoutDisplay').value;
+    searchParams.guests = document.getElementById('guestsDisplay').value;
+    loadRooms();
+  }
 
-        function roomDetailUrl(roomId) {
-            return ROOM_DETAIL_URL + 
-                   `?id=${roomId}&check_in=${searchParams.check_in}&check_out=${searchParams.check_out}&guests=${searchParams.guests}`;
-        }
+  document.getElementById('filterForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const min_price = formData.get('min_price');
+    const max_price = formData.get('max_price');
+    const room_type = formData.get('room_type');
+    const sort = formData.get('sort');
+    if (min_price) searchParams.min_price = min_price; else delete searchParams.min_price;
+    if (max_price) searchParams.max_price = max_price; else delete searchParams.max_price;
+    if (room_type) searchParams.room_type = room_type; else delete searchParams.room_type;
+    if (sort) searchParams.sort = sort; else delete searchParams.sort;
+    loadRooms();
+  });
 
-        async function loadRooms() {
-            try {
-                const resultsDiv = document.getElementById('results');
-                resultsDiv.innerHTML = '<p>Loading...</p>';
-                document.getElementById('errorBox').classList.add('hidden');
+  function roomDetailUrl(roomId) {
+    return ROOM_DETAIL_URL +
+      `?id=${roomId}&check_in=${searchParams.check_in}&check_out=${searchParams.check_out}&guests=${searchParams.guests}`;
+  }
 
-                const query = new URLSearchParams(searchParams).toString();
-                const res = await fetch(`${SEARCH_API_URL}?${query}`);
-                const data = await res.json();
+  function formatDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
 
-                if (!res.ok) {
-                    document.getElementById('errorBox').textContent = "Error: " + JSON.stringify(data.errors || data);
-                    document.getElementById('errorBox').classList.remove('hidden');
-                    resultsDiv.innerHTML = '';
-                    return;
-                }
+  function nightsBetween(a, b) {
+    if (!a || !b) return 0;
+    const da = new Date(a + 'T00:00:00'), db = new Date(b + 'T00:00:00');
+    return Math.max(0, Math.round((db - da) / 86400000));
+  }
 
-                document.getElementById('searchTitle').textContent = data.message;
-                resultsDiv.innerHTML = '';
-                if (data.rooms.length === 0) {
-                    resultsDiv.innerHTML = '<div class="card"><p style="text-align: center; padding: 2rem;">No rooms match your criteria. Try adjusting your filters.</p></div>';
-                    return;
-                }
+  async function loadRooms() {
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = `<div class="loading-container"><div class="spinner"></div><p>Finding available stays…</p></div>`;
+    document.getElementById('errorBox').classList.add('hidden');
 
-                data.rooms.forEach(room => {
-                    const detailUrl = roomDetailUrl(room.id);
-                    const card = document.createElement('div');
-                    card.className = 'card room-card';
-                    card.style.cursor = 'pointer';
-                    card.onclick = (e) => { if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return; window.location.href = detailUrl; };
-                    card.innerHTML = `
-                        <div class="room-info">
-                            <h3 style="margin-bottom: 0.5rem; font-size: 1.3rem;">${room.name}</h3>
-                            <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">${room.room_type} • Max ${room.capacity} Guests</p>
-                            <p style="margin-bottom: 1rem; line-height: 1.6; color: var(--text-light);">${room.description ? room.description.substring(0, 120) + '...' : 'Comfortable room with premium amenities.'}</p>
-                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                ${room.amenities_list.slice(0, 4).map(a => `<span style="background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">${a}</span>`).join('')}
-                                ${room.amenities_list.length > 4 ? `<span style="color: var(--primary); font-size: 0.8rem; font-weight: 600; padding: 4px 6px;">+${room.amenities_list.length - 4} more</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="room-price">
-                            <div style="font-size: 0.85rem; color: #666; margin-bottom: 0.2rem;">From</div>
-                            <div class="price-text">Rs. ${room.price_per_night}</div>
-                            <div style="font-size: 0.85rem; color: #666; margin-bottom: 1rem;">per night</div>
-                            <a href="${detailUrl}" class="btn" style="width: 100%; text-align: center; font-size: 0.9rem;">View Details</a>
-                        </div>
-                    `;
-                    resultsDiv.appendChild(card);
-                });
-            } catch (err) {
-                document.getElementById('errorBox').textContent = 'Network error fetching rooms.';
-                document.getElementById('errorBox').classList.remove('hidden');
-                document.getElementById('results').innerHTML = '';
-            }
-        }
+    try {
+      const query = new URLSearchParams(searchParams).toString();
+      const res = await fetch(`${SEARCH_API_URL}?${query}`);
+      const data = await res.json();
 
-        loadRooms();
-    </script>
+      if (!res.ok) {
+        document.getElementById('errorBox').textContent = "Error: " + JSON.stringify(data.errors || data);
+        document.getElementById('errorBox').classList.remove('hidden');
+        resultsDiv.innerHTML = '';
+        return;
+      }
+
+      const nights = nightsBetween(searchParams.check_in, searchParams.check_out);
+      document.getElementById('searchTitle').textContent = `${data.rooms.length} stay${data.rooms.length !== 1 ? 's' : ''} in ${searchParams.city}`;
+      if (searchParams.check_in && searchParams.check_out) {
+        document.getElementById('searchSubtitle').textContent = `${formatDate(searchParams.check_in)} → ${formatDate(searchParams.check_out)} · ${nights} night${nights !== 1 ? 's' : ''}`;
+      }
+
+      resultsDiv.innerHTML = '';
+      if (data.rooms.length === 0) {
+        resultsDiv.innerHTML = `
+          <div class="card" style="text-align: center; padding: 64px 32px;">
+            <div style="font-size: 40px; margin-bottom: 16px;">🏨</div>
+            <h3 style="font-weight: 600; margin-bottom: 8px;">No stays match your filters</h3>
+            <p style="color: var(--text-muted); font-size: 15px;">Try adjusting your dates or budget.</p>
+          </div>`;
+        return;
+      }
+
+      data.rooms.forEach(room => {
+        const detailUrl = roomDetailUrl(room.id);
+        const card = document.createElement('div');
+        card.className = 'room-card-h';
+        card.onclick = (e) => { if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return; window.location.href = detailUrl; };
+
+        const amenityChips = room.amenities_list.slice(0, 3).map(a =>
+          `<span class="chip">${a}</span>`).join('');
+        const moreChip = room.amenities_list.length > 3
+          ? `<span style="font-size: 12px; color: var(--accent); font-weight: 600; padding: 5px 6px;">+${room.amenities_list.length - 3} more</span>`
+          : '';
+
+        const imgHtml = room.primary_image
+          ? `<img src="${room.primary_image}" alt="${room.name}" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s cubic-bezier(0.22,1,0.36,1);" />`
+          : `<div class="card-image-placeholder"><span class="img-tag">${room.city} · ${room.room_type}</span></div>`;
+
+        card.innerHTML = `
+          <div class="card-image">${imgHtml}</div>
+          <div class="card-body">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                <div>
+                  <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); font-weight:500;">${room.room_type}</span>
+                  <h3 style="font-size:22px; font-weight:700; letter-spacing:-0.01em; margin-top:4px; margin-bottom:2px;">${room.name}</h3>
+                  <div style="font-size:14px; color:var(--text-muted); margin-bottom:12px;">📍 ${room.city} · Up to ${room.capacity} guests</div>
+                </div>
+              </div>
+              <p style="font-size:15px; color:var(--text-soft); line-height:1.55; margin-bottom:14px;">${(room.description || 'Comfortable room with premium amenities.').substring(0, 120)}…</p>
+              <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                <span class="chip chip-blue">Free cancel · 48h</span>
+                ${amenityChips}${moreChip}
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:24px; padding-top:20px; border-top:1px solid var(--border);">
+              <span style="font-size:13px; color:var(--text-muted);">${nights} night${nights !== 1 ? 's' : ''} · taxes incl.</span>
+              <div style="text-align:right;">
+                <div style="font-size:24px; font-weight:700; letter-spacing:-0.01em;">₹${room.price_per_night} <span style="font-size:14px; font-weight:400; color:var(--text-muted);">/ night</span></div>
+                <a href="${detailUrl}" class="btn" style="display:inline-flex; width:auto; padding:9px 20px; font-size:14px; margin-top:8px; border-radius:var(--pill);">View rooms →</a>
+              </div>
+            </div>
+          </div>`;
+        resultsDiv.appendChild(card);
+      });
+
+    } catch (err) {
+      document.getElementById('errorBox').textContent = 'Network error fetching rooms.';
+      document.getElementById('errorBox').classList.remove('hidden');
+      document.getElementById('results').innerHTML = '';
+    }
+  }
+
+  loadRooms();
+</script>
 {% endblock %}

@@ -1,64 +1,82 @@
 {% extends "base.html" %}
-{% block title %}Login - GrandStay{% endblock %}
+{% block title %}Sign In — Temples & Towns{% endblock %}
 
 {% block content %}
-    <div class="container" style="max-width: 400px;">
-        <div class="card">
-            <h2 style="margin-bottom: 1rem;">Login</h2>
-            <div id="errorBox" class="alert hidden"></div>
-            <form id="loginForm" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="email" required placeholder="john@example.com">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="password" required placeholder="Your password">
-                </div>
-                <button type="submit" class="btn">Login</button>
-            </form>
-            <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem;">
-                Don't have an account? <a href="{% url 'accounts:register-page' %}" style="color: var(--primary); text-decoration: none; font-weight: 600;">Sign Up here</a>
-            </p>
-        </div>
+<div class="auth-wrap">
+  <div class="auth-card">
+
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 28px;">
+      <div class="logo-mark"></div>
+      <span style="font-size: 15px; font-weight: 600;">Temples &amp; Towns</span>
     </div>
+
+    <h2 class="auth-title">Welcome back.</h2>
+    <p class="auth-sub">Sign in to manage your bookings.</p>
+
+    <div id="errorBox" class="alert hidden"></div>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" id="email" required placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label>Password</label>
+        <input type="password" id="password" required placeholder="Your password" autocomplete="current-password">
+      </div>
+      <button type="submit" id="loginBtn" class="btn" style="border-radius: var(--pill); font-size: 15px; padding: 13px;">
+        Sign in
+      </button>
+    </form>
+
+    <div class="auth-divider">or</div>
+
+    <p class="auth-footer-text">
+      Don't have an account? <a href="{% url 'accounts:register-page' %}">Create one →</a>
+    </p>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
-    <script>
-        async function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorBox = document.getElementById('errorBox');
+<script>
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorBox = document.getElementById('errorBox');
 
-            try {
-                const res = await fetch("{% url 'accounts:login' %}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: JSON.stringify({ email, password }),
-                    credentials: 'include'
-                });
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+    errorBox.classList.add('hidden');
 
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.user && data.user.is_staff) {
-                        window.location.href = "/admin/";
-                    } else {
-                        window.location.href = "{% url 'home' %}";
-                    }
-                } else {
-                    const data = await res.json();
-                    errorBox.textContent = data.detail || data.error || 'Login failed';
-                    errorBox.classList.remove('hidden');
-                }
-            } catch (err) {
-                errorBox.textContent = 'Network error';
-                errorBox.classList.remove('hidden');
-            }
+    try {
+      const res = await fetch("{% url 'accounts:login' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user && data.user.is_staff) {
+          window.location.href = "/admin/";
+        } else {
+          window.location.href = "{% url 'home' %}";
         }
-    </script>
+      } else {
+        const data = await res.json();
+        errorBox.textContent = data.detail || data.error || 'Login failed. Please try again.';
+        errorBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      errorBox.textContent = 'Network error. Please try again.';
+      errorBox.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+    }
+  }
+</script>
 {% endblock %}

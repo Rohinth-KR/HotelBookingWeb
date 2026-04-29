@@ -1,171 +1,192 @@
 {% extends "base.html" %}
-{% block title %}Sign Up - GrandStay{% endblock %}
+{% block title %}Create Account — Temples & Towns{% endblock %}
 
 {% block content %}
-    <div class="container" style="max-width: 450px;">
-        <!-- Registration Form -->
-        <div class="card" id="registerCard">
-            <h2 style="margin-bottom: 0.5rem; color: var(--primary);">Create an Account</h2>
-            <p style="color: var(--text-light); margin-bottom: 1.5rem;">Join GrandStay for exclusive deals.</p>
+<div class="auth-wrap">
 
-            <div id="regErrorBox" class="alert hidden"></div>
+  <!-- Registration form -->
+  <div class="auth-card" id="registerCard">
 
-            <form id="registerForm" onsubmit="handleRegister(event)">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="full_name" required placeholder="John Doe">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="email" required placeholder="john@example.com">
-                </div>
-                <div class="form-group">
-                    <label>Phone Number</label>
-                    <input type="text" id="phone_number" required placeholder="e.g., +919876543210">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="password" required placeholder="Min 8 characters">
-                </div>
-                <button type="submit" class="btn" id="regBtn">Sign Up</button>
-            </form>
-            <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem;">
-                Already have an account? <a href="{% url 'accounts:login-page' %}" style="color: var(--primary); text-decoration: none; font-weight: 600;">Login here</a>
-            </p>
-        </div>
-
-        <!-- OTP Verification Form (Hidden Initially) -->
-        <div class="card hidden" id="otpCard" style="text-align: center;">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">✉️</div>
-            <h2 style="margin-bottom: 0.5rem; color: var(--primary);">Verify Your Email</h2>
-            <p style="color: var(--text-light); margin-bottom: 1.5rem;">We've sent a 6-digit code to <strong id="sentEmailText"></strong>.</p>
-
-            <div id="otpErrorBox" class="alert hidden"></div>
-
-            <form id="otpForm" onsubmit="handleVerifyOTP(event)">
-                <div class="form-group">
-                    <input type="text" id="otp_code" required placeholder="Enter 6-digit code" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px;" maxlength="6">
-                </div>
-                <button type="submit" class="btn btn-success" id="otpBtn">Verify & Login</button>
-            </form>
-            <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem;">
-                Didn't receive the code? <button onclick="handleResendOTP()" id="resendBtn" style="background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; font-size: 0.9rem;">Resend OTP</button>
-            </p>
-        </div>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 28px;">
+      <div class="logo-mark"></div>
+      <span style="font-size: 15px; font-weight: 600;">Temples &amp; Towns</span>
     </div>
+
+    <h2 class="auth-title">Create an account.</h2>
+    <p class="auth-sub">Join to book your first stay.</p>
+
+    <div id="regErrorBox" class="alert hidden"></div>
+
+    <form id="registerForm" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label>Full name</label>
+        <input type="text" id="full_name" required placeholder="Aarav Menon" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" id="email" required placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Phone number</label>
+        <input type="text" id="phone_number" required placeholder="+91 98456 12345" autocomplete="tel">
+      </div>
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label>Password</label>
+        <input type="password" id="password" required placeholder="Min 8 characters" autocomplete="new-password">
+      </div>
+      <button type="submit" id="regBtn" class="btn" style="border-radius: var(--pill); font-size: 15px; padding: 13px;">
+        Create account
+      </button>
+    </form>
+
+    <p class="auth-footer-text" style="margin-top: 20px;">
+      Already have an account? <a href="{% url 'accounts:login-page' %}">Sign in →</a>
+    </p>
+  </div>
+
+  <!-- OTP verification -->
+  <div class="auth-card hidden" id="otpCard" style="text-align: center;">
+
+    <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 20px;">✉️</div>
+
+    <h2 class="auth-title">Check your inbox.</h2>
+    <p class="auth-sub">
+      We sent a 6-digit code to <strong id="sentEmailText" style="color: var(--text);"></strong>.
+    </p>
+
+    <div id="otpErrorBox" class="alert hidden"></div>
+
+    <form id="otpForm" onsubmit="handleVerifyOTP(event)">
+      <div class="form-group" style="margin-bottom: 24px;">
+        <input type="text" id="otp_code" required placeholder="000000" maxlength="6"
+               class="otp-input" style="text-align:center; font-size:28px; font-weight:700; letter-spacing:8px; padding:16px;">
+      </div>
+      <button type="submit" id="otpBtn" class="btn btn-success" style="border-radius: var(--pill); font-size: 15px; padding: 13px;">
+        Verify &amp; continue
+      </button>
+    </form>
+
+    <p style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted);">
+      Didn't receive it?
+      <button onclick="handleResendOTP()" id="resendBtn"
+              style="background: none; border: none; color: var(--accent); font-weight: 600; cursor: pointer; font-size: 13px; padding: 0;">
+        Resend code
+      </button>
+    </p>
+  </div>
+
+</div>
 {% endblock %}
 
 {% block extra_js %}
-    <script>
-        let registeredEmail = "";
+<script>
+  let registeredEmail = "";
 
-        async function handleResendOTP() {
-            const resendBtn = document.getElementById('resendBtn');
-            const errorBox = document.getElementById('otpErrorBox');
-            resendBtn.disabled = true;
-            resendBtn.textContent = 'Sending...';
-            errorBox.classList.add('hidden');
+  async function handleResendOTP() {
+    const resendBtn = document.getElementById('resendBtn');
+    const errorBox = document.getElementById('otpErrorBox');
+    resendBtn.disabled = true;
+    resendBtn.textContent = 'Sending…';
+    errorBox.classList.add('hidden');
 
-            try {
-                const res = await fetch("{% url 'accounts:resend-otp' %}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-                    body: JSON.stringify({ email: registeredEmail })
-                });
-                if (res.ok) {
-                    errorBox.textContent = 'A new code has been sent to your email!';
-                    errorBox.classList.remove('hidden');
-                    errorBox.classList.add('success');
-                    errorBox.classList.remove('alert');
-                } else {
-                    const data = await res.json();
-                    errorBox.textContent = data.error || 'Failed to resend OTP.';
-                    errorBox.classList.remove('hidden');
-                    errorBox.classList.remove('success');
-                    errorBox.classList.add('alert');
-                }
-            } catch (err) {
-                errorBox.textContent = 'Network error resending OTP.';
-                errorBox.classList.remove('hidden');
-            } finally {
-                setTimeout(() => { resendBtn.disabled = false; resendBtn.textContent = 'Resend OTP'; }, 30000);
-            }
-        }
+    try {
+      const res = await fetch("{% url 'accounts:resend-otp' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify({ email: registeredEmail })
+      });
+      if (res.ok) {
+        errorBox.textContent = 'A new code has been sent to your email.';
+        errorBox.className = 'alert success';
+        errorBox.classList.remove('hidden');
+      } else {
+        const data = await res.json();
+        errorBox.textContent = data.error || 'Failed to resend code.';
+        errorBox.className = 'alert';
+        errorBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      errorBox.textContent = 'Network error.';
+      errorBox.classList.remove('hidden');
+    } finally {
+      setTimeout(() => { resendBtn.disabled = false; resendBtn.textContent = 'Resend code'; }, 30000);
+    }
+  }
 
-        async function handleRegister(e) {
-            e.preventDefault();
-            const regBtn = document.getElementById('regBtn');
-            const errorBox = document.getElementById('regErrorBox');
-            regBtn.disabled = true;
-            regBtn.textContent = 'Sending code...';
-            errorBox.classList.add('hidden');
+  async function handleRegister(e) {
+    e.preventDefault();
+    const regBtn = document.getElementById('regBtn');
+    const errorBox = document.getElementById('regErrorBox');
+    regBtn.disabled = true;
+    regBtn.textContent = 'Sending code…';
+    errorBox.classList.add('hidden');
 
-            const payload = {
-                full_name: document.getElementById('full_name').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value
-            };
-            const phone = document.getElementById('phone_number').value;
-            if (phone) payload.phone = phone;
+    const payload = {
+      full_name: document.getElementById('full_name').value,
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value
+    };
+    const phone = document.getElementById('phone_number').value;
+    if (phone) payload.phone = phone;
 
-            try {
-                const res = await fetch("{% url 'accounts:register' %}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    registeredEmail = data.email;
-                    document.getElementById('sentEmailText').textContent = registeredEmail;
-                    document.getElementById('registerCard').classList.add('hidden');
-                    document.getElementById('otpCard').classList.remove('hidden');
-                } else {
-                    let errMsg = "Registration failed. ";
-                    if (data.errors) {
-                        for (const [key, msgs] of Object.entries(data.errors)) { errMsg += `\n${key}: ${msgs[0]}`; }
-                    } else { errMsg = data.detail || 'Something went wrong.'; }
-                    errorBox.innerText = errMsg;
-                    errorBox.classList.remove('hidden');
-                }
-            } catch (err) {
-                errorBox.textContent = 'Network error during registration.';
-                errorBox.classList.remove('hidden');
-            } finally {
-                regBtn.disabled = false;
-                regBtn.textContent = 'Sign Up';
-            }
-        }
+    try {
+      const res = await fetch("{% url 'accounts:register' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        registeredEmail = data.email;
+        document.getElementById('sentEmailText').textContent = registeredEmail;
+        document.getElementById('registerCard').classList.add('hidden');
+        document.getElementById('otpCard').classList.remove('hidden');
+      } else {
+        let errMsg = "Registration failed.";
+        if (data.errors) {
+          for (const [key, msgs] of Object.entries(data.errors)) { errMsg += ` ${key}: ${msgs[0]}`; }
+        } else { errMsg = data.detail || 'Something went wrong.'; }
+        errorBox.innerText = errMsg;
+        errorBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      errorBox.textContent = 'Network error.';
+      errorBox.classList.remove('hidden');
+    } finally {
+      regBtn.disabled = false;
+      regBtn.textContent = 'Create account';
+    }
+  }
 
-        async function handleVerifyOTP(e) {
-            e.preventDefault();
-            const otpBtn = document.getElementById('otpBtn');
-            const errorBox = document.getElementById('otpErrorBox');
-            otpBtn.disabled = true;
-            otpBtn.textContent = 'Verifying...';
-            errorBox.classList.add('hidden');
+  async function handleVerifyOTP(e) {
+    e.preventDefault();
+    const otpBtn = document.getElementById('otpBtn');
+    const errorBox = document.getElementById('otpErrorBox');
+    otpBtn.disabled = true;
+    otpBtn.textContent = 'Verifying…';
+    errorBox.classList.add('hidden');
 
-            try {
-                const res = await fetch("{% url 'accounts:verify-otp' %}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-                    body: JSON.stringify({ email: registeredEmail, otp: document.getElementById('otp_code').value }),
-                    credentials: 'include'
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    window.location.href = "{% url 'home' %}";
-                } else {
-                    errorBox.textContent = data.error || 'Verification failed.';
-                    errorBox.classList.remove('hidden');
-                }
-            } catch (err) {
-                errorBox.textContent = 'Network error during verification.';
-                errorBox.classList.remove('hidden');
-            } finally {
-                otpBtn.disabled = false;
-                otpBtn.textContent = 'Verify & Login';
-            }
-        }
-    </script>
+    try {
+      const res = await fetch("{% url 'accounts:verify-otp' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify({ email: registeredEmail, otp: document.getElementById('otp_code').value }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (res.ok) {
+        window.location.href = "{% url 'home' %}";
+      } else {
+        errorBox.textContent = data.error || 'Verification failed.';
+        errorBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      errorBox.textContent = 'Network error.';
+      errorBox.classList.remove('hidden');
+    } finally {
+      otpBtn.disabled = false;
+      otpBtn.textContent = 'Verify & continue';
+    }
+  }
+</script>
 {% endblock %}
